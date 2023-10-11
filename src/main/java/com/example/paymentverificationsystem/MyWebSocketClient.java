@@ -6,7 +6,6 @@ import org.springframework.web.socket.*;
 import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 

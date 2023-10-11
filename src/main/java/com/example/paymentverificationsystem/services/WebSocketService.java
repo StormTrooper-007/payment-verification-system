@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class MyService {
+public class WebSocketService {
 
     private final MyWebSocketClient webSocketClient;
     public void sendMessageToWebSocket(String message) {

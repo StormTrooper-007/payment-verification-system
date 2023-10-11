@@ -38,24 +38,24 @@ public class MyWebSocketClient implements WebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws ExecutionException {
-        System.out.println("WebSocket connection established");
+        System.out.println("Java Main WebSocket connection established");
     }
 
 
     //Handles the recieved message
     @Override
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception{
-        System.out.println("Recieved message: " + message.getPayload());
+        System.out.println("Java Main recieved: " + message.getPayload());
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        System.out.println("WebSocket transport error: " + exception.getMessage());
+        System.out.println("Java Main WebSocket transport error: " + exception.getMessage());
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
-        System.out.println("WebSocket connection closed with status: " + closeStatus.getCode());
+        System.out.println("Java Main WebSocket connection closed with status: " + closeStatus.getCode());
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.example.paymentverificationsystem.security;
 
 
-import com.example.paymentverificationsystem.services.MyService;
+import com.example.paymentverificationsystem.services.WebSocketService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -18,6 +18,8 @@ public class AppUserController {
 
     private final AppUserService appUserService;
 
+    private final WebSocketService webSocketService;
+
     @GetMapping("/me")
     ResponseEntity<String> getUser(){
         return ResponseEntity.status(HttpStatus.OK)
@@ -25,19 +27,31 @@ public class AppUserController {
     }
 
     @PostMapping("/login")
-    ResponseEntity<String> login(){
-        return ResponseEntity.status(HttpStatus.OK).body(SecurityContextHolder.getContext().getAuthentication().getName());
+    public ResponseEntity<String> login(){
+        try{
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            webSocketService.sendMessageToWebSocket("logged in successfully");
+            Thread.sleep(3000);
+            return ResponseEntity.status(HttpStatus.OK).body(username);
+        }catch(InterruptedException ex){
+           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request) throws ServletException {
-        request.logout();
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
+    public void logout(HttpServletRequest request) throws ServletException {
+        webSocketService.sendMessageToWebSocket("logged out successfully");
+        try{
+            Thread.sleep(3000);
+            request.logout();
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.invalidate();
+            }
+        }catch(InterruptedException ex){
+            webSocketService.sendMessageToWebSocket(ex.getMessage());
         }
 
-        return ResponseEntity.ok("logged out successfully");
     }
 
     @PostMapping("/register")

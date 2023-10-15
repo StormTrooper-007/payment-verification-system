@@ -11,6 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.AccessDeniedException;
+import java.util.NoSuchElementException;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
@@ -22,50 +25,65 @@ public class AppUserController {
 
     @GetMapping("/me")
     ResponseEntity<String> getUser(){
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(SecurityContextHolder.getContext().getAuthentication().getName());
+        try{
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(SecurityContextHolder.getContext().getAuthentication().getName());
+        }catch(NoSuchElementException ex){
+            return getUserException("user is not valid");
+        }
     }
 
     @PostMapping("/login")
     public ResponseEntity<String> login(){
         try{
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
-            webSocketService.sendMessageToWebSocket("logged in successfully");
+            webSocketService.sendMessageToWebSocket(username + " logged in successfully ");
             Thread.sleep(3000);
-            return ResponseEntity.status(HttpStatus.OK).body(username);
+            return ResponseEntity.ok(username);
         }catch(InterruptedException ex){
-           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+           return loginException("could not login");
         }
     }
 
     @GetMapping("/logout")
-    public void logout(HttpServletRequest request) throws ServletException {
-        webSocketService.sendMessageToWebSocket("logged out successfully");
+    public ResponseEntity<String> logout(HttpServletRequest request) throws ServletException {
+        webSocketService.sendMessageToWebSocket("logging out");
         try{
-            Thread.sleep(3000);
+            Thread.sleep(2000);
             request.logout();
             HttpSession session = request.getSession(false);
             if (session != null) {
                 session.invalidate();
             }
+            SecurityContextHolder.clearContext();
         }catch(InterruptedException ex){
             webSocketService.sendMessageToWebSocket(ex.getMessage());
         }
-
+        return ResponseEntity.ok("logged out successfully");
     }
 
     @PostMapping("/register")
     public ResponseEntity<String> registerNewUser(@RequestBody RegisterRequest registerRequest) {
         try {
             appUserService.registerNewUser(registerRequest.username(), registerRequest.email(), registerRequest.password());
+            webSocketService.sendMessageToWebSocket("new user registered successfully");
+            Thread.sleep(3000);
             return ResponseEntity.ok("New user " + "   " + registerRequest.username() + "  " + " created successfully");
-        } catch (IllegalArgumentException ex) {
-            return handleRegistrationException("Could no register new user");
+        } catch (IllegalArgumentException|InterruptedException ex) {
+            return handleRegistrationException("Could noT register new user");
         }
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleRegistrationException(String message) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
+    }
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<String> getUserException(String message) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
+    }
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> loginException(String message) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
     }
 }

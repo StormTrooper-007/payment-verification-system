@@ -7,9 +7,11 @@ import com.example.paymentverificationsystem.services.WebSocketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 
+import java.nio.file.AccessDeniedException;
 import java.security.Principal;
 
 @RestController
@@ -21,34 +23,20 @@ public class AppController {
     private final AppService appService;
 
 
-   @PostMapping("/verify")
-    public ResponseEntity<String> verify(Principal principal){
-        try{
-            String input = principal.toString();
-            String str = appService.extractAuthenticatedValue(input);
-            Thread.sleep(8000);
-            if(str.equals("true")){
-                webSocketService.sendMessageToWebSocket("user verified successfully");
-                return ResponseEntity
-                        .status(HttpStatus.OK)
-                        .body("user verified successfully");
-            }
-        }catch(RuntimeException | InterruptedException ex){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
-        }
-        return ResponseEntity.status(HttpStatus.OK).build();
-   }
-
     @PostMapping("/pay")
-    public ResponseEntity<String> pay(@RequestBody OrderDetailsWithoutId newOrder){
+    public ResponseEntity<String> pay(
+            @RequestBody OrderDetailsWithoutId newOrder, Authentication authentication
+    ){
         try{
+            webSocketService.sendMessageToWebSocket("verifying user");
+            appService.verify(authentication);
             appService.savePaymentDetails(newOrder);
             Thread.sleep(6000);
             webSocketService.sendMessageToWebSocket("payment successfull");
-        }catch(InterruptedException ex){
+            return ResponseEntity.status(HttpStatus.OK).body("payment successful");
+        }catch(InterruptedException | AccessDeniedException ex){
             return ResponseEntity.status(HttpStatus.OK).build();
         }
-        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
 }
